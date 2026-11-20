@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" fill="none">
+  <rect width="600" height="800" fill="#E9E4DC"/>
+  <rect x="28" y="28" width="544" height="744" stroke="#C9BFB2"/>
+  <path d="M199 270L249 238H351L401 270L464 382L411 412L385 363V618H215V363L189 412L136 382L199 270Z" fill="#D3C8BA"/>
+  <path d="M249 238L300 308L351 238" stroke="#B56F52" stroke-width="5"/>
+  <path d="M300 308V618" stroke="#B56F52" stroke-width="3"/>
+  <text x="300" y="700" fill="#625B54" font-family="Georgia,serif" font-size="28" letter-spacing="8" text-anchor="middle">FORME</text>
+</svg>
