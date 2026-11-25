@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { PRODUCT_GENDERS } = require('../constants/product');
 
 const isAllowedImagePath = (value) => value.startsWith('/') && !value.startsWith('//');
 const isHttpUrl = (value) => {
@@ -38,6 +39,10 @@ const productSchema = new mongoose.Schema(
       required: [true, 'Product category is required'],
       trim: true,
       maxlength: [100, 'Product category cannot exceed 100 characters'],
+    },
+    gender: {
+      type: String,
+      enum: PRODUCT_GENDERS,
     },
     image: {
       type: String,

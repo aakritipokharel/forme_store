@@ -3,6 +3,13 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 import ProductCard from '../components/ProductCard';
 
+const categoryImages = {
+  denim: '/images/category-denim.png',
+  dresses: '/images/category-dresses.png',
+  hoodies: '/images/category-hoodies.png',
+  knitwear: '/images/category-knitwear.png',
+};
+
 function HomePage() {
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,7 +65,7 @@ function HomePage() {
           <p className="hero-caption">FORME · CLOTHING FOR EVERY DAY</p>
         </div>
         <div className="hero-art">
-          <img src="/images/forme-editorial.svg" alt="Editorial illustration of a figure in a tailored coat" />
+            <img src="/images/forme-fashion-campaign.png" alt="FORME fashion campaign" className="hero-image"/>
           <span className="hero-art-label">A STUDY IN FORM — 01</span>
         </div>
       </section>
@@ -99,17 +106,21 @@ function HomePage() {
           <p className="store-message" role="status">Loading categories...</p>
         ) : categories.length ? (
           <div className="category-grid">
-            {categories.slice(0, 4).map((category, index) => (
-              <Link
-                className={`category-tile category-tone-${index % 4}`}
-                key={category}
-                to={`/shop?category=${encodeURIComponent(category)}`}
-              >
-                <span className="category-number">0{index + 1}</span>
-                <span className="category-name">{category}</span>
-                <span className="category-arrow" aria-hidden="true">↗</span>
-              </Link>
-            ))}
+            {categories.slice(0, 4).map((category, index) => {
+              const image = categoryImages[category.trim().toLowerCase()];
+              return (
+                <Link
+                  className={`category-tile category-tone-${index % 4}`}
+                  key={category}
+                  to={`/shop?category=${encodeURIComponent(category)}`}
+                >
+                  {image && <img className="category-image" src={image} alt="" aria-hidden="true" />}
+                  <span className="category-number">0{index + 1}</span>
+                  <span className="category-name">{category}</span>
+                  <span className="category-arrow" aria-hidden="true">↗</span>
+                </Link>
+              );
+            })}
           </div>
         ) : (
           <p className="store-message">Categories will appear as pieces are added to the collection.</p>

@@ -1,8 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import { useCart } from '../context/useCart';
 
 function SiteHeader() {
   const { user, logout } = useAuth();
+  const { itemCount } = useCart();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -21,7 +23,15 @@ function SiteHeader() {
       </nav>
       <div className="site-actions">
         <Link to="/account">My account</Link>
-        <Link className="cart-link" to="/cart">Cart <span>(coming soon)</span></Link>
+        {user && <Link to="/my-orders">My orders</Link>}
+        <Link className="cart-link" to="/cart" aria-label={`Shopping bag, ${itemCount} items`}>
+          <svg className="cart-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 8h16l-1.5 13h-13L4 8Z" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M9 9V6a3 3 0 0 1 6 0v3" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+          <span>Bag</span>
+          <span className="cart-count" aria-live="polite">{itemCount}</span>
+        </Link>
         {user ? (
           <button className="text-button" type="button" onClick={handleLogout}>Log out</button>
         ) : (

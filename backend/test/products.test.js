@@ -1,6 +1,23 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 
+test('product collection accepts only supported values and leaves legacy records unassigned', async () => {
+  const Product = require('../src/models/Product');
+  const validate = (product) => product.validate().then(
+    () => null,
+    (error) => error,
+  );
+  const legacyValidation = await validate(new Product());
+  assert.equal(legacyValidation?.errors.gender, undefined);
+
+  for (const gender of ['men', 'women', 'unisex']) {
+    const validation = await validate(new Product({ gender }));
+    assert.equal(validation?.errors.gender, undefined);
+  }
+  const invalidValidation = await validate(new Product({ gender: 'children' }));
+  assert.ok(invalidValidation?.errors.gender);
+});
+
 test('product seed has four complete products per category and preserves original images', () => {
   const { products: seededProducts } = require('../scripts/seedProducts');
   const originalImages = new Map([
@@ -96,6 +113,63 @@ test('public product endpoints return active products and support search and cat
   const categoriesResponse = await fetch(`${baseUrl}/categories`);
   assert.equal(categoriesResponse.status, 200);
   assert.deepEqual((await categoriesResponse.json()).data.categories, ['Outerwear', 'Shirts']);
+});
+
+test('public product and category endpoints filter by collection without hiding unassigned products from all products', async (t) => {
+  const Product = require('../src/models/Product');
+  const app = require('../src/app');
+  const products = [
+    { _id: '65a000000000000000000001', name: 'Men Denim', category: 'Denim', gender: 'men', active: true },
+    { _id: '65a000000000000000000002', name: 'Women Denim', category: 'Denim', gender: 'women', active: true },
+    { _id: '65a000000000000000000003', name: 'Unisex Tee', category: 'T-shirts', gender: 'unisex', active: true },
+    { _id: '65a000000000000000000004', name: 'Unclassified Shirt', category: 'Shirts', active: true },
+  ];
+  let listFilter;
+  let categoryFilter;
+  t.mock.method(Product, 'find', (filter) => {
+    listFilter = filter;
+    return {
+      sort: async () => products.filter((product) => (
+        product.active === filter.active
+        && (!filter.gender || product.gender === filter.gender)
+        && (!filter.category || filter.category.test(product.category))
+        && (!filter.$or || filter.$or.some((condition) => {
+          const [field, pattern] = Object.entries(condition)[0];
+          return pattern.test(product[field] || '');
+        }))
+      )),
+    };
+  });
+  t.mock.method(Product, 'distinct', async (field, filter) => {
+    categoryFilter = filter;
+    return [...new Set(products
+      .filter((product) => product.active && (!filter.gender || product.gender === filter.gender))
+      .map((product) => product[field]))];
+  });
+
+  const server = app.listen(0, '127.0.0.1');
+  await new Promise((resolve) => server.once('listening', resolve));
+  t.after(async () => new Promise((resolve) => server.close(resolve)));
+  const baseUrl = `http://127.0.0.1:${server.address().port}/api/products`;
+
+  const men = await fetch(`${baseUrl}?gender=men&category=Denim&search=Men`);
+  assert.equal(men.status, 200);
+  assert.deepEqual((await men.json()).data.products, [products[0]]);
+  assert.equal(listFilter.gender, 'men');
+  assert.equal(listFilter.category.test('Denim'), true);
+
+  const women = await fetch(`${baseUrl}?gender=women`);
+  assert.deepEqual((await women.json()).data.products, [products[1]]);
+  const unisex = await fetch(`${baseUrl}?gender=unisex`);
+  assert.deepEqual((await unisex.json()).data.products, [products[2]]);
+  const allProducts = await fetch(baseUrl);
+  assert.deepEqual((await allProducts.json()).data.products, products);
+
+  const menCategories = await fetch(`${baseUrl}/categories?gender=men`);
+  assert.deepEqual((await menCategories.json()).data.categories, ['Denim']);
+  assert.deepEqual(categoryFilter, { active: true, gender: 'men' });
+  const invalidGender = await fetch(`${baseUrl}?gender=children`);
+  assert.equal(invalidGender.status, 400);
 });
 
 test('product detail hides inactive and missing products and rejects invalid IDs as not found', async (t) => {

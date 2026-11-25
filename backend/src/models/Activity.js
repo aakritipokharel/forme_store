@@ -20,12 +20,15 @@ const activitySchema = new mongoose.Schema(
         'PRODUCT_CREATED',
         'PRODUCT_UPDATED',
         'PRODUCT_DELETED',
+        'CATEGORY_CREATED',
+        'CATEGORY_UPDATED',
+        'CATEGORY_DELETED',
       ],
       required: [true, 'Activity type is required'],
     },
     targetType: {
       type: String,
-      enum: ['Order', 'Product'],
+      enum: ['Order', 'Product', 'Category'],
       required: [true, 'Activity target type is required'],
     },
     targetId: {

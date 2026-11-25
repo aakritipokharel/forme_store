@@ -1,4 +1,18 @@
-# React + Vite
+# FORME storefront
+
+The storefront uses `VITE_API_URL` to connect to the Express API. Configure
+`VITE_SHIPPING_FEE_NPR` in the frontend environment to set the flat shipping
+fee in NPR (defaults to `150`). Guest carts are stored in browser localStorage;
+authenticated carts are saved through the API. Checkout is not enabled.
+
+Copy `.env.example` to `.env` and adjust the values for your environment.
+
+## Development
+
+Run `npm run dev` to start the storefront and `npm run build` to create a
+production build.
+
+## Vite template notes
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 

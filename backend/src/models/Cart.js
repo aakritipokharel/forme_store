@@ -9,12 +9,12 @@ const cartItemSchema = new mongoose.Schema(
     },
     size: {
       type: String,
-      required: [true, 'Selected size is required'],
+      default: '',
       trim: true,
     },
     color: {
       type: String,
-      required: [true, 'Selected color is required'],
+      default: '',
       trim: true,
     },
     quantity: {

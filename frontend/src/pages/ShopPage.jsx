@@ -4,10 +4,27 @@ import axios from 'axios';
 import api from '../services/api';
 import ProductCard from '../components/ProductCard';
 
+const collectionDetails = {
+  men: {
+    title: "The Men's Collection",
+    description: 'Explore everyday essentials and considered styles for men.',
+  },
+  women: {
+    title: "The Women's Collection",
+    description: 'Discover timeless pieces and effortless styles for women.',
+  },
+  unisex: {
+    title: 'The Unisex Collection',
+    description: 'Explore considered styles designed to be worn by everyone.',
+  },
+};
+
 function ShopPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
+  const gender = searchParams.get('gender') || '';
   const category = searchParams.get('category') || '';
+  const collection = collectionDetails[gender];
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -17,7 +34,8 @@ function ShopPage() {
 
   useEffect(() => {
     let active = true;
-    api.get('/products/categories')
+    const params = gender ? { gender } : {};
+    api.get('/products/categories', { params })
       .then(({ data }) => {
         if (!Array.isArray(data?.data?.categories)) {
           throw new Error('The category response was not valid.');
@@ -35,7 +53,7 @@ function ShopPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [gender]);
 
   useEffect(() => {
     let active = true;
@@ -44,6 +62,7 @@ function ShopPage() {
       setIsLoading(true);
       setError('');
       const params = {};
+      if (gender) params.gender = gender;
       if (search.trim()) params.search = search.trim();
       if (category) params.category = category;
 
@@ -73,14 +92,14 @@ function ShopPage() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [category, retry, search]);
+  }, [category, gender, retry, search]);
 
   return (
     <main className="shop-page">
       <div className="shop-intro">
         <p className="eyebrow">THE FORME COLLECTION</p>
-        <h1>Shop all</h1>
-        <p>Explore the current collection, selected for everyday wear.</p>
+        <h1>{collection?.title || 'Shop all'}</h1>
+        <p>{collection?.description || 'Explore the current collection, selected for everyday wear.'}</p>
       </div>
 
       <section className="shop-tools" aria-label="Product filters">

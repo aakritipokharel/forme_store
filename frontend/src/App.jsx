@@ -5,7 +5,6 @@ import {
   Routes,
   useLocation,
 } from 'react-router-dom';
-import api from './services/api';
 import { useAuth } from './context/useAuth';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -13,6 +12,21 @@ import HomePage from './pages/HomePage';
 import CategoriesPage from './pages/CategoriesPage';
 import ShopPage from './pages/ShopPage';
 import ProductPage from './pages/ProductPage';
+import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
+import MyOrdersPage from './pages/MyOrdersPage';
+import OrderDetailPage from './pages/OrderDetailPage';
+import OrderConfirmationPage from './pages/OrderConfirmationPage';
+import AdminOrdersPage from './pages/AdminOrdersPage';
+import AdminOrderDetailPage from './pages/AdminOrderDetailPage';
+import AdminLayout from './components/AdminLayout';
+import AdminDashboardPage from './pages/AdminDashboardPage';
+import AdminProductsPage from './pages/AdminProductsPage';
+import AdminProductFormPage from './pages/AdminProductFormPage';
+import AdminCategoriesPage from './pages/AdminCategoriesPage';
+import AdminCustomersPage from './pages/AdminCustomersPage';
+import AdminCustomerDetailPage from './pages/AdminCustomerDetailPage';
+import AdminActivityPage from './pages/AdminActivityPage';
 import SiteHeader from './components/SiteHeader';
 import SiteFooter from './components/SiteFooter';
 import './App.css';
@@ -50,38 +64,6 @@ function AccountPage() {
   );
 }
 
-function AdminPage() {
-  const [status, setStatus] = useState('Verifying administrator access...');
-
-  useEffect(() => {
-    let active = true;
-    api.get('/admin/me')
-      .then(({ data }) => {
-        if (active) {
-          setStatus(`Administrator access confirmed for ${data.data.user.name}.`);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setStatus('Administrator access could not be verified.');
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  return (
-    <main className="protected-page">
-      <p className="eyebrow">ADMINISTRATION</p>
-      <h1>Administrator access</h1>
-      <p className="setup-status" role="status">{status}</p>
-      <p className="home-copy">Admin tools will be added in a later project phase.</p>
-    </main>
-  );
-}
-
 function NotFoundPage() {
   return (
     <main className="protected-page">
@@ -91,27 +73,23 @@ function NotFoundPage() {
   );
 }
 
-function CartPlaceholderPage() {
-  return (
-    <main className="product-page-state">
-      <p className="eyebrow">COMING IN A LATER PHASE</p>
-      <h1>Your cart</h1>
-      <p>Cart functionality is not available yet. You can continue browsing the collection.</p>
-      <Link className="primary-button" to="/shop">Browse the collection</Link>
-    </main>
-  );
-}
-
 function App() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
   return (
     <>
-      <SiteHeader />
+      {!isAdminRoute && <SiteHeader />}
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/shop" element={<ShopPage />} />
         <Route path="/products/:id" element={<ProductPage />} />
-        <Route path="/cart" element={<CartPlaceholderPage />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+        <Route path="/order-confirmation/:id" element={<ProtectedRoute><OrderConfirmationPage /></ProtectedRoute>} />
+        <Route path="/my-orders" element={<ProtectedRoute><MyOrdersPage /></ProtectedRoute>} />
+        <Route path="/my-orders/:id" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route
@@ -122,17 +100,21 @@ function App() {
             </ProtectedRoute>
           )}
         />
-        <Route
-          path="/admin"
-          element={(
-            <ProtectedRoute adminOnly>
-              <AdminPage />
-            </ProtectedRoute>
-          )}
-        />
+        <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout /></ProtectedRoute>}>
+          <Route index element={<AdminDashboardPage />} />
+          <Route path="products" element={<AdminProductsPage />} />
+          <Route path="products/new" element={<AdminProductFormPage />} />
+          <Route path="products/:id/edit" element={<AdminProductFormPage />} />
+          <Route path="categories" element={<AdminCategoriesPage />} />
+          <Route path="orders" element={<AdminOrdersPage />} />
+          <Route path="orders/:id" element={<AdminOrderDetailPage />} />
+          <Route path="customers" element={<AdminCustomersPage />} />
+          <Route path="customers/:id" element={<AdminCustomerDetailPage />} />
+          <Route path="activity" element={<AdminActivityPage />} />
+        </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-      <SiteFooter />
+      {!isAdminRoute && <SiteFooter />}
     </>
   );
 }
