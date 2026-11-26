@@ -1,14 +1,17 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { useCart } from '../context/useCart';
+import { useToast } from '../context/ToastContext';
 
 function SiteHeader() {
   const { user, logout } = useAuth();
+  const notify = useToast();
   const { itemCount } = useCart();
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
+    notify('success', 'You have been logged out.');
     navigate('/');
   };
 

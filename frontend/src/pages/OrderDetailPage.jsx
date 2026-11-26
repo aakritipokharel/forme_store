@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import OrderDetails from '../components/OrderDetails';
+import { useToast } from '../context/ToastContext';
 import api from '../services/api';
 
 function OrderDetailPage() {
   const { id } = useParams();
+  const notify = useToast();
   const [order, setOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -43,13 +45,16 @@ function OrderDetailPage() {
       const { data } = await api.post(`/orders/my/${id}/cancel`);
       setOrder(data.data.order);
       setConfirmCancel(false);
+      notify('success', 'Order cancelled successfully.');
     } catch (requestError) {
-      setError(requestError.response?.data?.message || 'The order could not be cancelled.');
+      let message = requestError.response?.data?.message || 'The order could not be cancelled.';
       try {
         await loadOrder();
       } catch (loadError) {
-        setError(`${requestError.response?.data?.message || 'The order could not be cancelled.'} ${loadError.response?.data?.message || 'Order details could not be refreshed.'}`);
+        message = `${message} ${loadError.response?.data?.message || 'Order details could not be refreshed.'}`;
       }
+      setError(message);
+      notify('error', message);
     } finally {
       setIsCancelling(false);
     }

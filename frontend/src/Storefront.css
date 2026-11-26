@@ -1408,20 +1408,6 @@
   text-underline-offset: 3px;
 }
 
-.cart-notice {
-  position: fixed;
-  z-index: 5;
-  right: 24px;
-  bottom: 24px;
-  max-width: min(360px, calc(100vw - 32px));
-  padding: 14px 18px;
-  border: 1px solid #d2dfd0;
-  background: #eff4ed;
-  color: #304b33;
-  box-shadow: 0 8px 26px rgb(25 25 25 / 10%);
-  font-size: 0.82rem;
-}
-
 .profile-details {
   margin-top: 34px;
 }

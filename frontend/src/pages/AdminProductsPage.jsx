@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ProductImage from '../components/ProductImage';
+import { useToast } from '../context/ToastContext';
 import api from '../services/api';
 import { formatNpr } from '../utils/currency';
 
@@ -11,6 +12,7 @@ const collectionLabels = {
 };
 
 function AdminProductsPage() {
+  const notify = useToast();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState('');
@@ -21,7 +23,6 @@ function AdminProductsPage() {
   const [appliedGender, setAppliedGender] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
   const [retry, setRetry] = useState(0);
 
   useEffect(() => {
@@ -52,13 +53,14 @@ function AdminProductsPage() {
 
   const toggleActive = async (product) => {
     setError('');
-    setNotice('');
     try {
       const { data } = await api.put(`/admin/products/${product._id}`, { active: !product.active });
       setProducts((current) => current.map((item) => item._id === product._id ? data.data.product : item));
-      setNotice(`${product.name} is now ${data.data.product.active ? 'active' : 'inactive'}.`);
+      notify('success', `Product ${data.data.product.active ? 'activated' : 'deactivated'} successfully.`);
     } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Product status could not be changed.');
+      const message = requestError.response?.data?.message || 'Product status could not be changed.';
+      setError(message);
+      notify('error', message);
     }
   };
 
@@ -67,13 +69,14 @@ function AdminProductsPage() {
       return;
     }
     setError('');
-    setNotice('');
     try {
       await api.delete(`/admin/products/${product._id}`);
       setProducts((current) => current.filter((item) => item._id !== product._id));
-      setNotice(`${product.name} was deleted.`);
+      notify('success', 'Product deleted successfully.');
     } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Product could not be deleted.');
+      const message = requestError.response?.data?.message || 'Product could not be deleted.';
+      setError(message);
+      notify('error', message);
     }
   };
 
@@ -116,7 +119,6 @@ function AdminProductsPage() {
           <button type="button" onClick={() => { setIsLoading(true); setRetry((value) => value + 1); }}>Try again</button>
         </p>
       )}
-      {notice && <p className="admin-success" role="status">{notice}</p>}
       {isLoading ? <p className="admin-state" role="status">Loading products...</p> : products.length ? (
         <div className="admin-table-wrap">
           <table className="admin-table admin-product-table">

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import { useToast } from '../context/ToastContext';
 
 function LoginPage() {
   const { login } = useAuth();
+  const notify = useToast();
   const location = useLocation();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -18,12 +20,15 @@ function LoginPage() {
 
     try {
       const user = await login(email, password);
+      notify('success', 'Welcome back!');
       const requestedPath = location.state?.from?.pathname;
       navigate(user.role === 'admin' && requestedPath === '/admin' ? '/admin' : requestedPath || '/account', {
         replace: true,
       });
     } catch (requestError) {
-      setError(requestError.response?.data?.message || 'We could not sign you in. Please try again.');
+      const message = requestError.response?.data?.message || 'Email or password is incorrect.';
+      setError(message);
+      notify('error', message);
     } finally {
       setIsSubmitting(false);
     }

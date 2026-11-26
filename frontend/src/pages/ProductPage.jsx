@@ -11,7 +11,6 @@ function ProductPage() {
   const [product, setProduct] = useState(null);
   const [size, setSize] = useState('');
   const [color, setColor] = useState('');
-  const [addError, setAddError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -68,15 +67,12 @@ function ProductPage() {
   }
 
   const inStock = product.stock > 0;
-  const hasSelections = (!product.sizes?.length || size)
-    && (!product.colors?.length || color);
 
   const handleAdd = async () => {
-    setAddError('');
     try {
       await addItem(product, size, color);
-    } catch (error) {
-      setAddError(error.message);
+    } catch {
+      return;
     }
   };
 
@@ -127,12 +123,11 @@ function ProductPage() {
             <span aria-hidden="true">{inStock ? '●' : '○'}</span>
             {inStock ? `${product.stock} available` : 'Currently out of stock'}
           </p>
-          {addError && <p className="product-add-error" role="alert">{addError}</p>}
           <button
             className="primary-button detail-browse-button"
             type="button"
             onClick={handleAdd}
-            disabled={isSaving || !inStock || !hasSelections}
+            disabled={isSaving}
           >
             {inStock ? 'Add to bag' : 'Out of stock'}
           </button>

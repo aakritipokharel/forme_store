@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 import { useAuth } from './useAuth';
+import { useToast } from './ToastContext';
 import CartContext from './cartContext';
 
 const storageKey = 'formeGuestCart';
@@ -75,6 +76,7 @@ function responseItems(response) {
 
 export function CartProvider({ children }) {
   const { user, isLoading: isAuthLoading } = useAuth();
+  const notify = useToast();
   const userId = user?._id || user?.id || '';
   const userIdRef = useRef(userId);
   const [items, setItems] = useState(readGuestCart);
@@ -82,23 +84,13 @@ export function CartProvider({ children }) {
   const [isLoading, setIsLoading] = useState(Boolean(userId || isAuthLoading));
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
   const [retry, setRetry] = useState(0);
   const queueRef = useRef(Promise.resolve());
-  const noticeTimer = useRef(null);
 
   const replaceItems = useCallback((nextItems) => {
     itemsRef.current = nextItems;
     setItems(nextItems);
   }, []);
-
-  const showNotice = useCallback((message) => {
-    setNotice(message);
-    window.clearTimeout(noticeTimer.current);
-    noticeTimer.current = window.setTimeout(() => setNotice(''), 3500);
-  }, []);
-
-  useEffect(() => () => window.clearTimeout(noticeTimer.current), []);
 
   useEffect(() => {
     userIdRef.current = userId;
@@ -161,12 +153,12 @@ export function CartProvider({ children }) {
   const enqueueChange = useCallback((change, successMessage) => {
     const operation = queueRef.current.then(async () => {
       const previousItems = itemsRef.current;
-      const nextItems = change(previousItems);
-      replaceItems(nextItems);
-      setError('');
-      setIsSaving(true);
-
       try {
+        const nextItems = change(previousItems);
+        replaceItems(nextItems);
+        setError('');
+        setIsSaving(true);
+
         if (userIdRef.current) {
           const response = await api.put('/cart', { items: toApiItems(nextItems) });
           replaceItems(responseItems(response));
@@ -174,15 +166,17 @@ export function CartProvider({ children }) {
           window.localStorage.setItem(storageKey, JSON.stringify(nextItems));
         }
         if (successMessage) {
-          showNotice(successMessage);
+          notify('success', typeof successMessage === 'function'
+            ? successMessage(previousItems)
+            : successMessage);
         }
       } catch (requestError) {
         replaceItems(previousItems);
-        throw new Error(
-          requestError.response?.data?.message
-            || requestError.message
-            || 'Your cart could not be updated.',
-        );
+        const message = requestError.response?.data?.message
+          || requestError.message
+          || 'Your cart could not be updated.';
+        notify('error', message);
+        throw new Error(message);
       } finally {
         setIsSaving(false);
       }
@@ -190,35 +184,40 @@ export function CartProvider({ children }) {
 
     queueRef.current = operation.catch(() => {});
     return operation;
-  }, [replaceItems, showNotice]);
+  }, [notify, replaceItems]);
 
-  const addItem = useCallback((product, size = '', color = '') => enqueueChange((currentItems) => {
+  const addItem = useCallback((product, size = '', color = '') => {
     const selectedSize = size.trim();
     const selectedColor = color.trim();
-    if (product.sizes?.length && !selectedSize) {
-      throw new Error('Choose a size before adding this piece.');
-    }
-    if (product.colors?.length && !selectedColor) {
-      throw new Error('Choose a color before adding this piece.');
-    }
-    if (product.stock < 1 || product.active === false) {
-      throw new Error('This piece is currently unavailable.');
-    }
-
     const item = { product, size: selectedSize, color: selectedColor, quantity: 1 };
-    const existingIndex = currentItems.findIndex((entry) => getItemKey(entry) === getItemKey(item));
-    const existing = currentItems[existingIndex];
-    if ((existing?.quantity || 0) + 1 > product.stock) {
-      throw new Error(`Only ${product.stock} item${product.stock === 1 ? '' : 's'} available.`);
-    }
 
-    if (existingIndex < 0) {
-      return [...currentItems, item];
-    }
-    return currentItems.map((entry, index) => (
-      index === existingIndex ? { ...entry, quantity: entry.quantity + 1 } : entry
-    ));
-  }, `Added ${product.name} to your cart.`), [enqueueChange]);
+    return enqueueChange((currentItems) => {
+      if (product.sizes?.length && !selectedSize) {
+        throw new Error('Choose a size before adding this piece.');
+      }
+      if (product.colors?.length && !selectedColor) {
+        throw new Error('Choose a color before adding this piece.');
+      }
+      if (product.stock < 1 || product.active === false) {
+        throw new Error('This piece is currently unavailable.');
+      }
+
+      const existingIndex = currentItems.findIndex((entry) => getItemKey(entry) === getItemKey(item));
+      const existing = currentItems[existingIndex];
+      if ((existing?.quantity || 0) + 1 > product.stock) {
+        throw new Error(`Only ${product.stock} item${product.stock === 1 ? '' : 's'} available.`);
+      }
+
+      if (existingIndex < 0) {
+        return [...currentItems, item];
+      }
+      return currentItems.map((entry, index) => (
+        index === existingIndex ? { ...entry, quantity: entry.quantity + 1 } : entry
+      ));
+    }, (previousItems) => previousItems.some((entry) => getItemKey(entry) === getItemKey(item))
+      ? 'Cart updated!'
+      : 'Added to your cart!');
+  }, [enqueueChange]);
 
   const setQuantity = useCallback((key, quantity) => enqueueChange((currentItems) => {
     if (!Number.isInteger(quantity) || quantity < 1) {
@@ -235,10 +234,11 @@ export function CartProvider({ children }) {
     return currentItems.map((item) => (
       getItemKey(item) === key ? { ...item, quantity } : item
     ));
-  }), [enqueueChange]);
+  }, 'Cart updated!'), [enqueueChange]);
 
   const removeItem = useCallback((key) => enqueueChange(
     (currentItems) => currentItems.filter((item) => getItemKey(item) !== key),
+    'Item removed from cart.',
   ), [enqueueChange]);
 
   const clearAfterCheckout = useCallback(() => {
@@ -262,7 +262,6 @@ export function CartProvider({ children }) {
       isLoading,
       isSaving,
       error,
-      notice,
       addItem,
       setQuantity,
       removeItem,
@@ -271,7 +270,6 @@ export function CartProvider({ children }) {
       getItemKey,
     }}>
       {children}
-      {notice && <div className="cart-notice" role="status">{notice}</div>}
     </CartContext.Provider>
   );
 }

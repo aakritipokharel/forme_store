@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import OrderDetails from '../components/OrderDetails';
+import { useToast } from '../context/ToastContext';
 import api from '../services/api';
 
 const orderStatuses = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 
 function AdminOrderDetailPage() {
   const { id } = useParams();
+  const notify = useToast();
   const [order, setOrder] = useState(null);
   const [status, setStatus] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -48,8 +50,11 @@ function AdminOrderDetailPage() {
       setOrder(data.data.order);
       setStatus(data.data.order.status);
       setMessage('Order status updated.');
+      notify('success', 'Order status updated.');
     } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Order status could not be updated.');
+      const message = requestError.response?.data?.message || 'Order status could not be updated.';
+      setError(message);
+      notify('error', message);
       setStatus(order.status);
     } finally {
       setIsSaving(false);

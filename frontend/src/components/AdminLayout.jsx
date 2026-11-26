@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import { useToast } from '../context/ToastContext';
 import '../Admin.css';
 
 const navigation = [
@@ -14,11 +15,13 @@ const navigation = [
 
 function AdminLayout() {
   const { user, logout } = useAuth();
+  const notify = useToast();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const signOut = () => {
     logout();
+    notify('success', 'You have been logged out.');
     navigate('/');
   };
 

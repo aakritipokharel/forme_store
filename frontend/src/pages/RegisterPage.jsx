@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import { useToast } from '../context/ToastContext';
 
 function RegisterPage() {
   const { register } = useAuth();
+  const notify = useToast();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,8 +30,11 @@ function RegisterPage() {
     try {
       await register(name, email, password);
       setIsRegistered(true);
+      notify('success', 'Your account has been created!');
     } catch (requestError) {
-      setError(requestError.response?.data?.message || 'We could not create your account. Please try again.');
+      const message = requestError.response?.data?.message || 'We could not create your account. Please try again.';
+      setError(message);
+      notify('error', message);
     } finally {
       setIsSubmitting(false);
     }

@@ -7,17 +7,13 @@ function ProductCard({ product }) {
   const { addItem, isSaving } = useCart();
   const [size, setSize] = useState('');
   const [color, setColor] = useState('');
-  const [addError, setAddError] = useState('');
   const hasOptions = Boolean(product.sizes?.length || product.colors?.length);
-  const hasSelections = (!product.sizes?.length || size)
-    && (!product.colors?.length || color);
 
   const handleAdd = async () => {
-    setAddError('');
     try {
       await addItem(product, size, color);
-    } catch (error) {
-      setAddError(error.message);
+    } catch {
+      return;
     }
   };
 
@@ -55,12 +51,11 @@ function ProductCard({ product }) {
             )}
           </div>
         )}
-        {addError && <p className="product-add-error" role="alert">{addError}</p>}
         <button
           className="product-add-button"
           type="button"
           onClick={handleAdd}
-          disabled={isSaving || product.stock < 1 || !hasSelections}
+          disabled={isSaving}
         >
           {product.stock < 1 ? 'Out of stock' : 'Add to bag'}
         </button>

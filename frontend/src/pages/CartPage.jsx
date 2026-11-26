@@ -18,16 +18,7 @@ function CartPage() {
     setQuantity,
     removeItem,
   } = useCart();
-  const [actionError, setActionError] = useState('');
-
-  const runAction = async (action) => {
-    setActionError('');
-    try {
-      await action();
-    } catch (requestError) {
-      setActionError(requestError.message);
-    }
-  };
+  const runAction = (action) => action().catch(() => {});
 
   if (isLoading) {
     return <main className="cart-page" role="status">Loading your cart...</main>;
@@ -66,8 +57,6 @@ function CartPage() {
           <button className="text-button" type="button" onClick={retryLoading}>Try again</button>
         </div>
       )}
-      {actionError && <p className="cart-error" role="alert">{actionError}</p>}
-
       <div className="cart-layout">
         <section className="cart-items" aria-label="Items in your bag">
           {items.map((item) => {

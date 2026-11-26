@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ProductImage from '../components/ProductImage';
+import { useToast } from '../context/ToastContext';
 import api from '../services/api';
 
 function AdminCategoriesPage() {
+  const notify = useToast();
   const [categories, setCategories] = useState([]);
   const [name, setName] = useState('');
   const [image, setImage] = useState('');
@@ -13,7 +15,6 @@ function AdminCategoriesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
   const [retry, setRetry] = useState(0);
 
   useEffect(() => {
@@ -52,7 +53,6 @@ function AdminCategoriesPage() {
     setImageFile(null);
     setPreviewUrl('');
     setError('');
-    setNotice('');
   };
 
   const selectImage = (event) => {
@@ -76,7 +76,6 @@ function AdminCategoriesPage() {
     event.preventDefault();
     setIsSaving(true);
     setError('');
-    setNotice('');
     try {
       let imagePath = image.trim();
       if (imageFile) {
@@ -97,10 +96,12 @@ function AdminCategoriesPage() {
           ? current.map((item) => item._id === editingId ? { ...item, ...saved } : item)
           : [...current, { ...saved, productCount: 0 }].sort((left, right) => left.name.localeCompare(right.name))
       ));
-      setNotice(editingId ? 'Category updated.' : 'Category created.');
+      notify('success', editingId ? 'Category updated successfully.' : 'Category created successfully.');
       resetForm();
     } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Category could not be saved.');
+      const message = requestError.response?.data?.message || 'Category could not be saved.';
+      setError(message);
+      notify('error', message);
     } finally {
       setIsSaving(false);
     }
@@ -109,13 +110,14 @@ function AdminCategoriesPage() {
   const deleteCategory = async (category) => {
     if (!window.confirm(`Delete category "${category.name}"?`)) return;
     setError('');
-    setNotice('');
     try {
       await api.delete(`/admin/categories/${category._id}`);
       setCategories((current) => current.filter((item) => item._id !== category._id));
-      setNotice(`${category.name} was deleted.`);
+      notify('success', 'Category deleted successfully.');
     } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Category could not be deleted.');
+      const message = requestError.response?.data?.message || 'Category could not be deleted.';
+      setError(message);
+      notify('error', message);
     }
   };
 
@@ -126,7 +128,6 @@ function AdminCategoriesPage() {
         <Link className="admin-back-link" to="/admin/products">View products</Link>
       </div>
       {error && <p className="admin-alert" role="alert">{error}</p>}
-      {notice && <p className="admin-success" role="status">{notice}</p>}
       <div className="admin-category-layout">
         <form className="admin-form admin-category-form" onSubmit={saveCategory}>
           <h2>{editingId ? 'Edit category' : 'Add category'}</h2>

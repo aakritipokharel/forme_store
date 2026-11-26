@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import ProductImage from '../components/ProductImage';
 import { useAuth } from '../context/useAuth';
 import { useCart } from '../context/useCart';
+import { useToast } from '../context/ToastContext';
 import api from '../services/api';
 import { formatNpr } from '../utils/currency';
 
@@ -31,6 +32,7 @@ function getIdempotencyKey() {
 
 function CheckoutPage() {
   const { user } = useAuth();
+  const notify = useToast();
   const { items, subtotal, isLoading: isCartLoading, clearAfterCheckout } = useCart();
   const navigate = useNavigate();
   const [delivery, setDelivery] = useState({
@@ -79,12 +81,15 @@ function CheckoutPage() {
       );
       window.sessionStorage.removeItem('formeCheckoutRequestKey');
       clearAfterCheckout();
+      notify('success', 'Your order has been placed successfully!');
       navigate(`/order-confirmation/${data.data.order._id}`, {
         replace: true,
         state: { order: data.data.order },
       });
     } catch (requestError) {
-      setError(requestError.response?.data?.message || requestError.message || 'Your order could not be placed.');
+      const message = requestError.response?.data?.message || requestError.message || 'Your order could not be placed.';
+      setError(message);
+      notify('error', message);
     } finally {
       setIsSubmitting(false);
     }

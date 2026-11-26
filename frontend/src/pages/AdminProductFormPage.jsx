@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import ProductImage from '../components/ProductImage';
+import { useToast } from '../context/ToastContext';
 import api from '../services/api';
 
 const blankProduct = {
@@ -22,6 +23,7 @@ const splitOptions = (value) => value.split(',').map((item) => item.trim()).filt
 function AdminProductFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const notify = useToast();
   const isEditing = Boolean(id);
   const [product, setProduct] = useState(blankProduct);
   const [categories, setCategories] = useState([]);
@@ -117,9 +119,12 @@ function AdminProductFormPage() {
       };
       if (isEditing) await api.put(`/admin/products/${id}`, payload);
       else await api.post('/admin/products', payload);
+      notify('success', isEditing ? 'Product updated successfully.' : 'Product created successfully.');
       navigate('/admin/products', { replace: true });
     } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Product could not be saved.');
+      const message = requestError.response?.data?.message || 'Product could not be saved.';
+      setError(message);
+      notify('error', message);
     } finally {
       setIsSaving(false);
     }
