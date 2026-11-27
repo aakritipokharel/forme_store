@@ -1,23 +1,26 @@
-name: Deploy to EC2
+
+name: Test EC2 Connection
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to EC2
+      - name: Connect to EC2
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/forme_store
-            git pull origin main
-            docker compose up -d --build
+            echo "SSH connection successful!"
+            whoami
+            pwd
+            node -v
+            npm -v
+            pm2 -v
+            nginx -v
+            ls -la ~
