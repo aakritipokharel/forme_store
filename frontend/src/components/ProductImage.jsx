@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 
 const fallbackImage = '/images/product-placeholder.svg';
 const apiOrigin = new URL(
-  import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  import.meta.env.VITE_API_URL ||
+    (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api'),
   window.location.origin,
 ).origin;
 
