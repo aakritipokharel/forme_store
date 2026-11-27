@@ -6,6 +6,10 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 env:
   AWS_REGION: us-east-1
   STACK_NAME: forme-store-stack
@@ -149,7 +153,8 @@ jobs:
             sudo nginx -t && sudo systemctl reload nginx
 
       - name: Print Live Web Application URL
-        run: echo "Live URL: http://${{ steps.get-ip.outputs.EC2_IP }}"
+        run: |
+          echo "Live URL: http://${{ steps.get-ip.outputs.EC2_IP }}"
 
       - name: Clean up temporary SSH key
         if: always()
